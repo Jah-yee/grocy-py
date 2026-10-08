@@ -48,10 +48,13 @@ class ChoreLog(BaseModel):
         self.userfields = api_client.get_userfields("chores_log", self.id)
         self.chore = Chore.from_details_response(api_client.get_chore(self.chore_id))
         user = api_client.get_user(self.done_by)
-        self.done_by_user = User(
-            id=user.id,
-            username=user.username,
-            first_name=user.first_name,
-            last_name=user.last_name,
-            display_name=user.display_name,
-        )
+        if user is not None:
+            self.done_by_user = User(
+                id=user.id,
+                username=user.username,
+                first_name=user.first_name,
+                last_name=user.last_name,
+                display_name=user.display_name,
+            )
+        else:
+            self.done_by_user = None

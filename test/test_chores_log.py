@@ -67,3 +67,44 @@ class TestChoresLog:
 
         error = exc_info.value
         assert error.status_code == 500
+
+
+def test_get_details_deleted_user_none(mocker):
+    """Test that get_details handles deleted users gracefully.
+    
+    When a chore is done by a deleted user, get_user returns None.
+    get_details should set done_by_user to None instead of raising AttributeError.
+    Regression test for https://github.com/iamkarlson/grocy-py/issues/22
+    """
+    from grocy.data_models.chore_log import ChoreLog
+    from grocy.data_models.chore import Chore
+    from grocy.data_models.user import User
+    from datetime import datetime
+    
+    # Create a ChoreLog with a user that was deleted
+    chore_log = ChoreLog(
+        id=1,
+        chore_id=1,
+        tracked_time=datetime.now(),
+        done_by=99999,  # deleted user
+        row_created_timestamp=datetime.now(),
+        undone=False,
+        skipped=False,
+    )
+    
+    # Mock api_client
+    mock_api = mocker.Mock()
+    mock_api.get_userfields.return_value = {}
+    
+    # Mock get_chore to return a valid chore
+    mock_chore = mocker.Mock(spec=Chore)
+    mock_api.get_chore.return_value = mock_chore
+    
+    # Mock get_user to return None (deleted user)
+    mock_api.get_user.return_value = None
+    
+    # This should not raise AttributeError
+    chore_log.get_details(mock_api)
+    
+    # done_by_user should be None
+    assert chore_log.done_by_user is None
