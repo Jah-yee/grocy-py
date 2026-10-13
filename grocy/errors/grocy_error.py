@@ -13,8 +13,14 @@ class GrocyError(Exception):
         self._status_code = response.status_code
 
         if len(response.text) > 0:
-            json = response.json()
-            self._message = json["error_message"]
+            try:
+                json = response.json()
+                self._message = json.get("error_message")
+                if self._message is None:
+                    self._message = response.text[:200]
+            except ValueError:
+                # Non-JSON body (e.g. reverse proxy HTML error page)
+                self._message = response.text[:200]
         else:
             self._message = None
 
